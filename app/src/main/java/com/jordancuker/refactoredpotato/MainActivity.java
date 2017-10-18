@@ -1,5 +1,15 @@
 package com.jordancuker.refactoredpotato;
 
+
+/* Consider
+https://github.com/umano/AndroidSlidingUpPanel
+https://github.com/TakuSemba/Spotlight
+*https://github.com/KeepSafe/TapTargetView
+*https://github.com/gowong/material-sheet-fab
+*https://github.com/futuresimple/android-floating-action-button
+*
+* */
+
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
