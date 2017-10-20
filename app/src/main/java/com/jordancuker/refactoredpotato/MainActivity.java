@@ -10,12 +10,18 @@ https://github.com/TakuSemba/Spotlight
 *
 * */
 
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.view.MotionEventCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -25,6 +31,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.PieChart;
@@ -35,6 +45,8 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.MPPointF;
@@ -42,10 +54,15 @@ import com.github.mikephil.charting.utils.MPPointF;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnChartValueSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, OnChartValueSelectedListener, OnChartGestureListener {
 
     private PieChart mChart;
-    private ArrayList<String> arrPartiesInvolved;
+    private ArrayList<PartyEntity> arrPartiesInvolved;
+
+    public class PartyEntity{
+        public String name;
+        public double percent;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +89,15 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        arrPartiesInvolved = new ArrayList<>();
+        PartyEntity entity = new PartyEntity();
+        entity.name = "Greg";
+        entity.percent = 50;
+        arrPartiesInvolved.add(entity);
+        entity = new PartyEntity();
+        entity.name = "Jordan";
+        entity.percent = 50;
+        arrPartiesInvolved.add(entity);
 
         InitializePieChart();
     }
@@ -108,8 +134,9 @@ public class MainActivity extends AppCompatActivity
 
         // add a selection listener
         mChart.setOnChartValueSelectedListener(this);
+        mChart.setOnChartGestureListener(this);
 
-        setData(2, 100);
+        setData(arrPartiesInvolved.size(), 100);
 
         mChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
         // mChart.spin(2000, 0, 360);
@@ -131,10 +158,6 @@ public class MainActivity extends AppCompatActivity
 
     private void setData(int count, float range) {
 
-        arrPartiesInvolved = new ArrayList<>();
-        arrPartiesInvolved.add("Greg");
-        arrPartiesInvolved.add("Jordan");
-
         float mult = range;
 
         ArrayList<PieEntry> entries = new ArrayList<PieEntry>();
@@ -142,12 +165,12 @@ public class MainActivity extends AppCompatActivity
         // NOTE: The order of the entries when being added to the entries array determines their position around the center of
         // the chart.
         for (int i = 0; i < count ; i++) {
-            entries.add(new PieEntry((float) ((Math.random() * mult) + mult / 5),
-                    arrPartiesInvolved.get(i % arrPartiesInvolved.size()),
-                    getResources().getDrawable(R.drawable.ic_menu_gallery)));
+            PartyEntity entity = arrPartiesInvolved.get(i);
+            PieEntry pieEntry = new PieEntry((float)entity.percent, entity.name, getResources().getDrawable(R.drawable.ic_menu_gallery));
+            entries.add(pieEntry);
         }
 
-        PieDataSet dataSet = new PieDataSet(entries, "Election Results");
+        PieDataSet dataSet = new PieDataSet(entries, "");
 
         dataSet.setDrawIcons(false);
 
@@ -158,21 +181,21 @@ public class MainActivity extends AppCompatActivity
         // add a lot of colors
 
         ArrayList<Integer> colors = new ArrayList<Integer>();
-
-        for (int c : ColorTemplate.VORDIPLOM_COLORS)
-            colors.add(c);
-
-        for (int c : ColorTemplate.JOYFUL_COLORS)
-            colors.add(c);
+//
+//        for (int c : ColorTemplate.VORDIPLOM_COLORS)
+//            colors.add(c);
+//
+//        for (int c : ColorTemplate.JOYFUL_COLORS)
+//            colors.add(c);
 
         for (int c : ColorTemplate.COLORFUL_COLORS)
             colors.add(c);
-
-        for (int c : ColorTemplate.LIBERTY_COLORS)
-            colors.add(c);
-
-        for (int c : ColorTemplate.PASTEL_COLORS)
-            colors.add(c);
+//
+//        for (int c : ColorTemplate.LIBERTY_COLORS)
+//            colors.add(c);
+//
+//        for (int c : ColorTemplate.PASTEL_COLORS)
+//            colors.add(c);
 
         colors.add(ColorTemplate.getHoloBlue());
 
@@ -191,15 +214,9 @@ public class MainActivity extends AppCompatActivity
         mChart.invalidate();
     }
 
-
     @Override
     public void onValueSelected(Entry e, Highlight h) {
 
-        if (e == null)
-            return;
-        Log.i("VAL SELECTED",
-                "Value: " + e.getY() + ", index: " + h.getX()
-                        + ", DataSet index: " + h.getDataSetIndex());
     }
 
     @Override
@@ -233,8 +250,8 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
-        }
+            Intent prefIntent = new Intent(this, SettingsActivity.class);
+            startActivity(prefIntent);        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -263,4 +280,88 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    // region required by OnChartGestureListener
+
+    @Override
+    public void onChartLongPressed(MotionEvent motionEvent){
+        final Dialog dialog = new Dialog(MainActivity.this);
+        dialog.setContentView(R.layout.dialog_name_select);
+        dialog.setTitle("Title...");
+
+        Button positiveButton = (Button) dialog.findViewById(R.id.positiveButtonNameSelect);
+        positiveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                arrPartiesInvolved = new ArrayList<PartyEntity>();
+                EditText person1 = (EditText) dialog.findViewById(R.id.person1EditText);
+                EditText person1Percent = (EditText) dialog.findViewById(R.id.person1EditNumber);
+                EditText person2 = (EditText) dialog.findViewById(R.id.person2EditText);
+                EditText person2Percent = (EditText) dialog.findViewById(R.id.person2EditNumber);
+
+                if(person1.getText() != null && person1Percent != null){
+                    PartyEntity entity = new PartyEntity();
+                    entity.name = person1.getText().toString();
+                    entity.percent = Double.parseDouble(person1Percent.getText().toString());
+                    arrPartiesInvolved.add(entity);
+                }
+                if(person2.getText() != null && person2Percent != null){
+                    PartyEntity entity = new PartyEntity();
+                    entity.name = person2.getText().toString();
+                    entity.percent = Double.parseDouble(person2Percent.getText().toString());
+                    arrPartiesInvolved.add(entity);
+                }
+                mChart.invalidate();
+                InitializePieChart();
+                dialog.dismiss();
+            }
+        });
+        Button negativeButton = (Button) dialog.findViewById(R.id.negativeButtonNameSelect);
+        negativeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    @Override
+    public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+
+    }
+
+    @Override
+    public void onChartDoubleTapped(MotionEvent me) {
+
+    }
+
+    @Override
+    public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {
+
+    }
+
+    @Override
+    public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+
+    }
+
+    @Override
+    public void onChartSingleTapped(MotionEvent me) {
+        Toast.makeText(getApplicationContext(), "Long press the chart to edit it.", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onChartScale(MotionEvent me, float scaleX, float scaleY) {
+
+    }
+
+    @Override
+    public void onChartTranslate(MotionEvent me, float dX, float dY) {
+
+    }
+
+    //endregion
+
 }

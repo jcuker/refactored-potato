@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference android:title="Add user"
+        android:key="addusername"
+        android:summary="Please enter a name to add"/>
+    <EditTextPreference android:title="Remove user"
+        android:key="removeusername"
+        android:summary="Please enter a name to remove"/>
+
+</PreferenceScreen>
