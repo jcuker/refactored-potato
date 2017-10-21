@@ -34,6 +34,7 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.animation.Easing;
@@ -43,6 +44,7 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.ChartTouchListener;
@@ -50,18 +52,21 @@ import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.MPPointF;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnChartValueSelectedListener, OnChartGestureListener {
 
     private PieChart mChart;
     private ArrayList<PartyEntity> arrPartiesInvolved;
+    public float totalAmount = 425;
 
     public class PartyEntity{
         public String name;
-        public double percent;
+        public float percent;
     }
 
     @Override
@@ -92,15 +97,26 @@ public class MainActivity extends AppCompatActivity
         arrPartiesInvolved = new ArrayList<>();
         PartyEntity entity = new PartyEntity();
         entity.name = "Greg";
-        entity.percent = 50;
+        entity.percent = .70f;
         arrPartiesInvolved.add(entity);
         entity = new PartyEntity();
         entity.name = "Jordan";
-        entity.percent = 50;
+        entity.percent = .30f;
         arrPartiesInvolved.add(entity);
 
+        InitializeCategoryAndAmount();
         InitializePieChart();
+
     }
+
+    private void InitializeCategoryAndAmount() {
+        TextView categoryName = (TextView) findViewById(R.id.categoryHeader);
+        TextView categoryPrice = (TextView) findViewById(R.id.categoryTotal);
+
+        categoryName.setText("Utilities");
+        categoryPrice.setText("$425.00");
+    }
+
 
     private void InitializePieChart() {
 
@@ -113,7 +129,7 @@ public class MainActivity extends AppCompatActivity
 
         mChart.setDragDecelerationFrictionCoef(0.95f);
 
-        mChart.setDrawHoleEnabled(true);
+        mChart.setDrawHoleEnabled(false);
         mChart.setHoleColor(Color.WHITE);
 
         mChart.setTransparentCircleColor(Color.WHITE);
@@ -136,10 +152,9 @@ public class MainActivity extends AppCompatActivity
         mChart.setOnChartValueSelectedListener(this);
         mChart.setOnChartGestureListener(this);
 
-        setData(arrPartiesInvolved.size(), 100);
+        setData(arrPartiesInvolved.size());
 
         mChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
-        // mChart.spin(2000, 0, 360);
 
         Legend l = mChart.getLegend();
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
@@ -149,69 +164,67 @@ public class MainActivity extends AppCompatActivity
         l.setXEntrySpace(7f);
         l.setYEntrySpace(0f);
         l.setYOffset(0f);
+        l.setTextColor(Color.WHITE);
 
         // entry label styling
         mChart.setEntryLabelColor(Color.WHITE);
         mChart.setEntryLabelTypeface(mTfRegular);
         mChart.setEntryLabelTextSize(12f);
+
     }
 
-    private void setData(int count, float range) {
+    private void setData(int count) {
+        ArrayList<PieEntry> entries = new ArrayList<>();
 
-        float mult = range;
-
-        ArrayList<PieEntry> entries = new ArrayList<PieEntry>();
-
-        // NOTE: The order of the entries when being added to the entries array determines their position around the center of
-        // the chart.
         for (int i = 0; i < count ; i++) {
             PartyEntity entity = arrPartiesInvolved.get(i);
-            PieEntry pieEntry = new PieEntry((float)entity.percent, entity.name, getResources().getDrawable(R.drawable.ic_menu_gallery));
+            PieEntry pieEntry = new PieEntry(entity.percent, entity.name, getResources().getDrawable(R.drawable.ic_menu_gallery));
             entries.add(pieEntry);
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "");
-
         dataSet.setDrawIcons(false);
-
-        dataSet.setSliceSpace(3f);
+        dataSet.setSliceSpace(0f);
         dataSet.setIconsOffset(new MPPointF(0, 40));
         dataSet.setSelectionShift(5f);
-
-        // add a lot of colors
-
-        ArrayList<Integer> colors = new ArrayList<Integer>();
-//
-//        for (int c : ColorTemplate.VORDIPLOM_COLORS)
-//            colors.add(c);
-//
-//        for (int c : ColorTemplate.JOYFUL_COLORS)
-//            colors.add(c);
-
-        for (int c : ColorTemplate.COLORFUL_COLORS)
+        dataSet.setValueFormatter(new CustomFormatter());
+        dataSet.setValueTextColor(R.color.dollarGreen);
+        ArrayList<Integer> colors = new ArrayList<>();
+        for (int c : ColorTemplate.COLORFUL_COLORS) {
             colors.add(c);
-//
-//        for (int c : ColorTemplate.LIBERTY_COLORS)
-//            colors.add(c);
-//
-//        for (int c : ColorTemplate.PASTEL_COLORS)
-//            colors.add(c);
-
+        }
         colors.add(ColorTemplate.getHoloBlue());
-
         dataSet.setColors(colors);
-        //dataSet.setSelectionShift(0f);
 
         PieData data = new PieData(dataSet);
-        data.setValueFormatter(new PercentFormatter());
         data.setValueTextSize(11f);
         data.setValueTextColor(Color.WHITE);
         mChart.setData(data);
 
         // undo all highlights
         mChart.highlightValues(null);
-
         mChart.invalidate();
+    }
+
+    private class CustomFormatter implements IValueFormatter{
+        @Override
+        public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+            PartyEntity party = GetCorrespondingPartyForPieChartDisplay(entry);
+            if(party != null){
+                float amountOwed = totalAmount * (float) party.percent;
+                return String.format(Locale.getDefault(), "$ %.2f", amountOwed);
+            }
+            return "";
+        }
+    }
+
+    private PartyEntity GetCorrespondingPartyForPieChartDisplay(Entry entry){
+        for(PartyEntity entity : arrPartiesInvolved){
+            if(entity.name.toLowerCase().equals(((PieEntry)entry).getLabel().toLowerCase())){
+                return entity;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -302,13 +315,13 @@ public class MainActivity extends AppCompatActivity
                 if(person1.getText() != null && person1Percent != null){
                     PartyEntity entity = new PartyEntity();
                     entity.name = person1.getText().toString();
-                    entity.percent = Double.parseDouble(person1Percent.getText().toString());
+                    entity.percent = Float.parseFloat(person1Percent.getText().toString());
                     arrPartiesInvolved.add(entity);
                 }
                 if(person2.getText() != null && person2Percent != null){
                     PartyEntity entity = new PartyEntity();
                     entity.name = person2.getText().toString();
-                    entity.percent = Double.parseDouble(person2Percent.getText().toString());
+                    entity.percent = Float.parseFloat(person2Percent.getText().toString());
                     arrPartiesInvolved.add(entity);
                 }
                 mChart.invalidate();
