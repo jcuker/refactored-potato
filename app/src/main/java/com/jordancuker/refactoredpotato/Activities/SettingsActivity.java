@@ -1,4 +1,4 @@
-package com.jordancuker.refactoredpotato;
+package com.jordancuker.refactoredpotato.Activities;
 
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -7,10 +7,11 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
+
+import com.jordancuker.refactoredpotato.R;
 
 import java.util.Set;
 

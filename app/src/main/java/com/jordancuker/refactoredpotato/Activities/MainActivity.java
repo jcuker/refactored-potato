@@ -1,4 +1,4 @@
-package com.jordancuker.refactoredpotato;
+package com.jordancuker.refactoredpotato.Activities;
 
 
 /* Consider
@@ -11,15 +11,13 @@ https://github.com/TakuSemba/Spotlight
 * */
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.view.MotionEventCompat;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,12 +29,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
@@ -45,7 +43,6 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IValueFormatter;
-import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
@@ -53,6 +50,8 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.MPPointF;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.jordancuker.refactoredpotato.R;
+import com.jordancuker.refactoredpotato.SupportingClasses.PartyEntity;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -64,11 +63,6 @@ public class MainActivity extends AppCompatActivity
     private ArrayList<PartyEntity> arrPartiesInvolved;
     public float totalAmount = 425;
 
-    public class PartyEntity{
-        public String name;
-        public float percent;
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,14 +70,19 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        final View actionB = findViewById(R.id.action_b);
+        com.getbase.floatingactionbutton.FloatingActionButton actionC = new com.getbase.floatingactionbutton.FloatingActionButton(getBaseContext());
+        actionC.setTitle("Hide/Show Action above");
+        actionC.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void onClick(View v) {
+                actionB.setVisibility(actionB.getVisibility() == View.GONE ? View.VISIBLE : View.GONE);
             }
         });
+
+        final FloatingActionsMenu menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.fab);
+        menuMultipleActions.addButton(actionC);
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -116,7 +115,6 @@ public class MainActivity extends AppCompatActivity
         categoryName.setText("Utilities");
         categoryPrice.setText("$425.00");
     }
-
 
     private void InitializePieChart() {
 
@@ -211,13 +209,14 @@ public class MainActivity extends AppCompatActivity
         public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
             PartyEntity party = GetCorrespondingPartyForPieChartDisplay(entry);
             if(party != null){
-                float amountOwed = totalAmount * (float) party.percent;
+                float amountOwed = totalAmount * party.percent;
                 return String.format(Locale.getDefault(), "$ %.2f", amountOwed);
             }
             return "";
         }
     }
 
+    @Nullable
     private PartyEntity GetCorrespondingPartyForPieChartDisplay(Entry entry){
         for(PartyEntity entity : arrPartiesInvolved){
             if(entity.name.toLowerCase().equals(((PieEntry)entry).getLabel().toLowerCase())){
