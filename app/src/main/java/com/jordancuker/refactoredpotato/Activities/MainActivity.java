@@ -17,7 +17,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,7 +29,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -122,7 +123,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void InitializeFAB() {
-        final FloatingActionsMenu menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.fab);
+        final FloatingActionsMenu menuMultipleActions = findViewById(R.id.fab);
         final View actionA = findViewById(R.id.action_a);
         actionA.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -263,22 +264,26 @@ public class MainActivity extends AppCompatActivity
         String categoryHeader = toolbarSpinner.getSelectedItem().toString();
 
         if(categoryHeader.toLowerCase().equals("total")){
-            dollarAmountTV.setText("$" + String.valueOf(totalAmount));
+            String stringToDisplay = String.format(Locale.getDefault(), "$ %.2f", totalAmount);
+            dollarAmountTV.setText(stringToDisplay);
         }
         else if(categoryHeader.toLowerCase().equals("utilities")){
-            dollarAmountTV.setText("$" + String.valueOf(utilitiesAmount));
+            String stringToDisplay = String.format(Locale.getDefault(), "$ %.2f", utilitiesAmount);
+            dollarAmountTV.setText(stringToDisplay);
         }
         else if(categoryHeader.toLowerCase().equals("groceries")){
-            dollarAmountTV.setText("$" + String.valueOf(groceriesAmount));
+            String stringToDisplay = String.format(Locale.getDefault(), "$ %.2f", groceriesAmount);
+            dollarAmountTV.setText(stringToDisplay);
         }
         else if(categoryHeader.toLowerCase().equals("misc")){
-            dollarAmountTV.setText("$" + String.valueOf(miscAmount));
+            String stringToDisplay = String.format(Locale.getDefault(), "$ %.2f", miscAmount);
+            dollarAmountTV.setText(stringToDisplay);
         }
 
 
         Typeface mTfRegular = Typeface.createFromAsset(getAssets(), "OpenSans-Regular.ttf");
 
-        mChart = (PieChart) findViewById(R.id.chart1);
+        mChart = findViewById(R.id.chart1);
         mChart.setUsePercentValues(true);
         mChart.getDescription().setEnabled(false);
         mChart.setExtraOffsets(5, 10, 5, 5);
@@ -301,9 +306,6 @@ public class MainActivity extends AppCompatActivity
         mChart.setRotationEnabled(true);
         mChart.setHighlightPerTapEnabled(true);
 
-        // mChart.setUnit(" €");
-        // mChart.setDrawUnitsInChart(true);
-
         // add a selection listener
         mChart.setOnChartValueSelectedListener(this);
         mChart.setOnChartGestureListener(this);
@@ -321,6 +323,7 @@ public class MainActivity extends AppCompatActivity
         l.setYEntrySpace(0f);
         l.setYOffset(0f);
         l.setTextColor(Color.WHITE);
+        l.setEnabled(false);
 
         // entry label styling
         mChart.setEntryLabelColor(Color.WHITE);
@@ -334,7 +337,7 @@ public class MainActivity extends AppCompatActivity
 
         for (int i = 0; i < count ; i++) {
             PartyEntity entity = arrPartiesInvolved.get(i);
-            PieEntry pieEntry = new PieEntry(entity.percent, entity.name, getResources().getDrawable(R.drawable.ic_menu_gallery));
+            PieEntry pieEntry = new PieEntry(entity.percent, entity.name, ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_menu_camera));
             entries.add(pieEntry);
         }
 
@@ -416,19 +419,12 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
     }
 
     @Override
@@ -448,7 +444,7 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
@@ -466,7 +462,7 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
