@@ -11,13 +11,13 @@ https://github.com/TakuSemba/Spotlight
 * */
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -29,12 +29,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.mikephil.charting.animation.Easing;
@@ -52,6 +52,7 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.MPPointF;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.jordancuker.refactoredpotato.BuildConfig;
 import com.jordancuker.refactoredpotato.R;
 import com.jordancuker.refactoredpotato.SupportingClasses.PartyEntity;
 
@@ -63,7 +64,8 @@ public class MainActivity extends AppCompatActivity
 
     private PieChart mChart;
     private ArrayList<PartyEntity> arrPartiesInvolved;
-    public float totalAmount = 425;
+
+    private float totalAmount, utilitiesAmount, groceriesAmount, miscAmount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,17 +83,27 @@ public class MainActivity extends AppCompatActivity
         entity.percent = .30f;
         arrPartiesInvolved.add(entity);
 
-        InitializeCategoryAndAmount();
-        InitializePieChart();
+        InitializeCategoriesAndAmounts();
         InitializeFAB();
         InitializeToolbar();
-
+        InitializePieChart();
     }
 
     private void InitializeToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("");
         Spinner spinner = findViewById(R.id.spinner_nav);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                InitializePieChart();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.Categories, R.layout.toolbar_spinner);
         // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -111,23 +123,94 @@ public class MainActivity extends AppCompatActivity
 
     private void InitializeFAB() {
         final FloatingActionsMenu menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.fab);
+        final View actionA = findViewById(R.id.action_a);
+        actionA.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Dialog dialog = new Dialog(MainActivity.this);
+                dialog.setContentView(R.layout.dialog_amounts);
+
+                Button positiveButton = dialog.findViewById(R.id.amountPositiveButton);
+                positiveButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        SharedPreferences sharedPreferences = getSharedPreferences(BuildConfig.APPLICATION_ID, Context.MODE_PRIVATE);
+
+                        EditText utilitiesAmountET = dialog.findViewById(R.id.utilitiesEditText);
+                        EditText groceriesAmountET = dialog.findViewById(R.id.groceriesEditText);
+                        EditText miscAmountET = dialog.findViewById(R.id.miscEditText);
+
+                        float newTotal = 0;
+
+                        if(utilitiesAmountET.getText() == null){
+                            newTotal += utilitiesAmount;
+                        }
+                        else{
+                            String editTextValue = utilitiesAmountET.getText().toString();
+                            float newUtilitiesAmount = Float.valueOf(editTextValue);
+                            newTotal += newUtilitiesAmount;
+                            utilitiesAmount = newUtilitiesAmount;
+                            sharedPreferences.edit().putFloat("utilities_amount", newUtilitiesAmount).apply();
+                        }
+
+                        if(groceriesAmountET.getText() == null){
+                            newTotal += groceriesAmount;
+                        }
+                        else{
+                            String editTextValue = groceriesAmountET.getText().toString();
+                            float newGroceriesAmount = Float.valueOf(editTextValue);
+                            newTotal += newGroceriesAmount;
+                            groceriesAmount = newGroceriesAmount;
+                            sharedPreferences.edit().putFloat("groceries_amount", newGroceriesAmount).apply();
+                        }
+
+                        if(miscAmountET.getText() == null){
+                            newTotal += miscAmount;
+                        }
+                        else{
+                            String editTextValue = utilitiesAmountET.getText().toString();
+                            float newMiscAmount = Float.valueOf(editTextValue);
+                            newTotal += newMiscAmount;
+                            miscAmount = newMiscAmount;
+                            sharedPreferences.edit().putFloat("misc_amount", newMiscAmount).apply();
+                        }
+
+                        sharedPreferences.edit().putFloat("total_amount", newTotal).apply();
+                        totalAmount = newTotal;
+
+                        mChart.invalidate();
+                        InitializeCategoriesAndAmounts();
+                        InitializePieChart();
+                        dialog.dismiss();
+                    }
+                });
+                Button negativeButton = dialog.findViewById(R.id.amountNegativeButton);
+                negativeButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+                dialog.show();
+                menuMultipleActions.collapse();
+            }
+        });
         final View actionB = findViewById(R.id.action_b);
         actionB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 final Dialog dialog = new Dialog(MainActivity.this);
                 dialog.setContentView(R.layout.dialog_name_select);
-                dialog.setTitle("Title...");
 
-                Button positiveButton = (Button) dialog.findViewById(R.id.positiveButtonNameSelect);
+                Button positiveButton = dialog.findViewById(R.id.nameselectPositiveButton);
                 positiveButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        arrPartiesInvolved = new ArrayList<PartyEntity>();
-                        EditText person1 = (EditText) dialog.findViewById(R.id.person1EditText);
-                        EditText person1Percent = (EditText) dialog.findViewById(R.id.person1EditNumber);
-                        EditText person2 = (EditText) dialog.findViewById(R.id.person2EditText);
-                        EditText person2Percent = (EditText) dialog.findViewById(R.id.person2EditNumber);
+                        arrPartiesInvolved = new ArrayList<>();
+                        EditText person1 = dialog.findViewById(R.id.person1NameEditText);
+                        EditText person1Percent = dialog.findViewById(R.id.person1PercentEditText);
+                        EditText person2 = dialog.findViewById(R.id.person2NameEditText);
+                        EditText person2Percent = dialog.findViewById(R.id.person2PercentEditText);
 
                         if(person1.getText() != null && person1Percent != null){
                             PartyEntity entity = new PartyEntity();
@@ -146,7 +229,7 @@ public class MainActivity extends AppCompatActivity
                         dialog.dismiss();
                     }
                 });
-                Button negativeButton = (Button) dialog.findViewById(R.id.negativeButtonNameSelect);
+                Button negativeButton = dialog.findViewById(R.id.nameselectNegativeButton);
                 negativeButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -159,13 +242,39 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    private void InitializeCategoryAndAmount() {
-        TextView categoryPrice = (TextView) findViewById(R.id.categoryTotal);
+    private void InitializeCategoriesAndAmounts() {
+        SharedPreferences sharedPreferences = getSharedPreferences(BuildConfig.APPLICATION_ID, Context.MODE_PRIVATE);
 
-        categoryPrice.setText("$425.00");
+        if(sharedPreferences != null){
+            totalAmount = sharedPreferences.getFloat("total_amount", 0);
+            utilitiesAmount = sharedPreferences.getFloat("utilities_amount", 0);
+            groceriesAmount = sharedPreferences.getFloat("groceries_amount", 0);
+            miscAmount = sharedPreferences.getFloat("misc_amount", 0);
+        }
+
     }
 
     private void InitializePieChart() {
+
+        TextView dollarAmountTV = findViewById(R.id.categoryTotal);
+
+        Spinner toolbarSpinner = findViewById(R.id.spinner_nav);
+
+        String categoryHeader = toolbarSpinner.getSelectedItem().toString();
+
+        if(categoryHeader.toLowerCase().equals("total")){
+            dollarAmountTV.setText("$" + String.valueOf(totalAmount));
+        }
+        else if(categoryHeader.toLowerCase().equals("utilities")){
+            dollarAmountTV.setText("$" + String.valueOf(utilitiesAmount));
+        }
+        else if(categoryHeader.toLowerCase().equals("groceries")){
+            dollarAmountTV.setText("$" + String.valueOf(groceriesAmount));
+        }
+        else if(categoryHeader.toLowerCase().equals("misc")){
+            dollarAmountTV.setText("$" + String.valueOf(miscAmount));
+        }
+
 
         Typeface mTfRegular = Typeface.createFromAsset(getAssets(), "OpenSans-Regular.ttf");
 
@@ -257,10 +366,30 @@ public class MainActivity extends AppCompatActivity
         @Override
         public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
             PartyEntity party = GetCorrespondingPartyForPieChartDisplay(entry);
+
             if(party != null){
-                float amountOwed = totalAmount * party.percent;
+                Spinner toolbarSpinner = findViewById(R.id.spinner_nav);
+
+                String categoryHeader = toolbarSpinner.getSelectedItem().toString();
+
+                float amountOwed = 0;
+
+                if(categoryHeader.toLowerCase().equals("total")){
+                    amountOwed = totalAmount * party.percent;
+                }
+                else if(categoryHeader.toLowerCase().equals("utilities")){
+                    amountOwed = utilitiesAmount * party.percent;
+                }
+                else if(categoryHeader.toLowerCase().equals("groceries")){
+                    amountOwed = groceriesAmount * party.percent;
+                }
+                else if(categoryHeader.toLowerCase().equals("misc")){
+                    amountOwed = miscAmount * party.percent;
+                }
+
                 return String.format(Locale.getDefault(), "$ %.2f", amountOwed);
             }
+
             return "";
         }
     }
