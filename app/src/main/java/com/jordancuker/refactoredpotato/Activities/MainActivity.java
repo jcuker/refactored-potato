@@ -29,8 +29,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,31 +69,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        final View actionB = findViewById(R.id.action_b);
-        com.getbase.floatingactionbutton.FloatingActionButton actionC = new com.getbase.floatingactionbutton.FloatingActionButton(getBaseContext());
-        actionC.setTitle("Hide/Show Action above");
-        actionC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                actionB.setVisibility(actionB.getVisibility() == View.GONE ? View.VISIBLE : View.GONE);
-            }
-        });
-
-        final FloatingActionsMenu menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.fab);
-        menuMultipleActions.addButton(actionC);
-
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
 
         arrPartiesInvolved = new ArrayList<>();
         PartyEntity entity = new PartyEntity();
@@ -105,14 +83,85 @@ public class MainActivity extends AppCompatActivity
 
         InitializeCategoryAndAmount();
         InitializePieChart();
+        InitializeFAB();
+        InitializeToolbar();
 
     }
 
+    private void InitializeToolbar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("");
+        Spinner spinner = findViewById(R.id.spinner_nav);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.Categories, R.layout.toolbar_spinner);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+        setSupportActionBar(toolbar);
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void InitializeFAB() {
+        final FloatingActionsMenu menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.fab);
+        final View actionB = findViewById(R.id.action_b);
+        actionB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Dialog dialog = new Dialog(MainActivity.this);
+                dialog.setContentView(R.layout.dialog_name_select);
+                dialog.setTitle("Title...");
+
+                Button positiveButton = (Button) dialog.findViewById(R.id.positiveButtonNameSelect);
+                positiveButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        arrPartiesInvolved = new ArrayList<PartyEntity>();
+                        EditText person1 = (EditText) dialog.findViewById(R.id.person1EditText);
+                        EditText person1Percent = (EditText) dialog.findViewById(R.id.person1EditNumber);
+                        EditText person2 = (EditText) dialog.findViewById(R.id.person2EditText);
+                        EditText person2Percent = (EditText) dialog.findViewById(R.id.person2EditNumber);
+
+                        if(person1.getText() != null && person1Percent != null){
+                            PartyEntity entity = new PartyEntity();
+                            entity.name = person1.getText().toString();
+                            entity.percent = Float.parseFloat(person1Percent.getText().toString());
+                            arrPartiesInvolved.add(entity);
+                        }
+                        if(person2.getText() != null && person2Percent != null){
+                            PartyEntity entity = new PartyEntity();
+                            entity.name = person2.getText().toString();
+                            entity.percent = Float.parseFloat(person2Percent.getText().toString());
+                            arrPartiesInvolved.add(entity);
+                        }
+                        mChart.invalidate();
+                        InitializePieChart();
+                        dialog.dismiss();
+                    }
+                });
+                Button negativeButton = (Button) dialog.findViewById(R.id.negativeButtonNameSelect);
+                negativeButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+                dialog.show();
+                menuMultipleActions.collapse();
+            }
+        });
+    }
+
     private void InitializeCategoryAndAmount() {
-        TextView categoryName = (TextView) findViewById(R.id.categoryHeader);
         TextView categoryPrice = (TextView) findViewById(R.id.categoryTotal);
 
-        categoryName.setText("Utilities");
         categoryPrice.setText("$425.00");
     }
 
@@ -297,46 +346,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onChartLongPressed(MotionEvent motionEvent){
-        final Dialog dialog = new Dialog(MainActivity.this);
-        dialog.setContentView(R.layout.dialog_name_select);
-        dialog.setTitle("Title...");
 
-        Button positiveButton = (Button) dialog.findViewById(R.id.positiveButtonNameSelect);
-        positiveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                arrPartiesInvolved = new ArrayList<PartyEntity>();
-                EditText person1 = (EditText) dialog.findViewById(R.id.person1EditText);
-                EditText person1Percent = (EditText) dialog.findViewById(R.id.person1EditNumber);
-                EditText person2 = (EditText) dialog.findViewById(R.id.person2EditText);
-                EditText person2Percent = (EditText) dialog.findViewById(R.id.person2EditNumber);
-
-                if(person1.getText() != null && person1Percent != null){
-                    PartyEntity entity = new PartyEntity();
-                    entity.name = person1.getText().toString();
-                    entity.percent = Float.parseFloat(person1Percent.getText().toString());
-                    arrPartiesInvolved.add(entity);
-                }
-                if(person2.getText() != null && person2Percent != null){
-                    PartyEntity entity = new PartyEntity();
-                    entity.name = person2.getText().toString();
-                    entity.percent = Float.parseFloat(person2Percent.getText().toString());
-                    arrPartiesInvolved.add(entity);
-                }
-                mChart.invalidate();
-                InitializePieChart();
-                dialog.dismiss();
-            }
-        });
-        Button negativeButton = (Button) dialog.findViewById(R.id.negativeButtonNameSelect);
-        negativeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
     }
 
     @Override
@@ -361,7 +371,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onChartSingleTapped(MotionEvent me) {
-        Toast.makeText(getApplicationContext(), "Long press the chart to edit it.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
